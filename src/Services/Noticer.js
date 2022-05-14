@@ -1,6 +1,5 @@
 import FootballAPI from '../APIClient/FootballAPI.js';
 import {KUBO} from '../config/players.js';
-import dayjs from 'dayjs';
 
 class Noticer {
   constructor() {
@@ -8,7 +7,6 @@ class Noticer {
   }
 
   notice () {
-    console.log(dayjs('2022-05-15').format('YYYY-MM-DD'));
   }
 
   async isStart () {
