@@ -1,0 +1,25 @@
+{
+  "name": "notice-footballer",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Torata-inoue/notice-footballer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Torata-inoue/notice-footballer/issues"
+  },
+  "homepage": "https://github.com/Torata-inoue/notice-footballer#readme",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "dayjs": "^1.11.2",
+    "dotenv": "^16.0.0"
+  }
+}
