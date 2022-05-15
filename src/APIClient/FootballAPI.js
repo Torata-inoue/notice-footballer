@@ -41,7 +41,7 @@ class FootballAPI {
       throw new Error('fixtureは必須パラメータです');
     }
 
-    const params = {fixture, team, };
+    const params = {fixture, team, player};
     const request = await this.sendRequest('GET', 'fixtures/lineups', params);
 
     if (request.status !== 200) {

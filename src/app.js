@@ -1,3 +1,3 @@
 import Noticer from './Services/Noticer.js';
 
-Noticer.run();
+Noticer.run().then(res => console.log(res))

@@ -20,8 +20,8 @@ class Noticer {
     const response = await this.DynamoDB.find(KUBO.dynamo_id);
     const fixture = response.Item;
     const status = fixture.status.N;
-    const fixture_date = dayjs(fixture.date.S);
-    // const fixture_date = dayjs('2022-05-15T02:30:00+09:00');
+    // const fixture_date = dayjs(fixture.date.S);
+    const fixture_date = dayjs('2022-05-16T02:30:00+09:00');
     const player_id = fixture.player_id.N;
     const fixture_id = fixture.fixture_id.N;
 
@@ -32,29 +32,25 @@ class Noticer {
 
     // 試合開始済みの場合はスタメンかどうか確認
     if (status === MATCH_NOT_STARTED && dayjs().isAfter(fixture_date)) {
-      if (await this.isStart()) {
-      // if (true) {
+      if (await this.isStart(parseInt(fixture_id))) {
         const text = "Hola!\n久保建英が先発だよ、見てね！";
-        this.LineAPI.postMessage(text)
+        await this.LineAPI.postMessage(text);
         this.DynamoDB.update(player_id, MATCH_NOTICED, fixture_date.format(), fixture_id);
-        return;
       }
       // スタメンにいない場合はstatusをベンチに変更
       this.DynamoDB.update(player_id, MATCH_BENCH, fixture_date.format(), fixture_id);
-      return;
     }
 
-    if (await this.isSubst()) {
-    // if (true) {
+    if (await this.isSubst(parseInt(fixture_id))) {
       const text = "Hola!\n久保建英が途中出場だよ、応援よろしく！";
-      this.LineAPI.postMessage(text);
+      await this.LineAPI.postMessage(text);
       this.DynamoDB.update(player_id, MATCH_NOTICED, fixture_date.format(), fixture_id);
     }
   }
 
-  async isStart () {
+  async isStart (fixture_id) {
     const lineup = await this.FootballAPI.getLineUp({
-      fixture: '721095',
+      fixture: fixture_id,
       team: KUBO.team_id,
       player: KUBO.player_id
     });
@@ -65,9 +61,9 @@ class Noticer {
     return lineup[0].startXI[0].player.id === KUBO.player_id;
   }
 
-  async isSubst () {
+  async isSubst (fixture_id) {
     const substs = await this.FootballAPI.getSubstEvents({
-      fixture: '721095',
+      fixture: fixture_id,
       team: KUBO.team_id
     });
 
