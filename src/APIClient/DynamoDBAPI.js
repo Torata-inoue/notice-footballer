@@ -4,6 +4,7 @@ import {
   PutItemCommand,
   UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb';
+import Player from '../Model/Player.js';
 
 class DynamoDBAPI {
   constructor() {
@@ -30,7 +31,7 @@ class DynamoDBAPI {
     }
   }
 
-  find (player_id) {
+  async find (player_id) {
     const params = {
       TableName: this.table_name,
       Key: {
@@ -38,29 +39,26 @@ class DynamoDBAPI {
       },
     };
 
-    return this.ddbClient.send(new GetItemCommand(params));
+    const data = await this.ddbClient.send(new GetItemCommand(params));
+    return new Player(data.Item);
   }
 
-  update (player_id, status, date, fixture_id) {
+  update (player) {
     const params = {
       TableName: this.table_name,
       Key: {
-        player_id: {N: player_id},
+        player_id: {N: String(player.player_id)},
       },
       UpdateExpression: "SET #st = :s, #dt = :d, fixture_id = :f",
       ExpressionAttributeNames: {
         '#st' : 'status',
         '#dt': 'date'
       },
-      ExpressionAttributeValues: {
-        ":s": { N: status },
-        ":d": { S: date },
-        ":f": { N: fixture_id }
-      },
+      ExpressionAttributeValues: player.getExpressionAttributeValues(':s', ':d', ':f'),
       ReturnValues: "UPDATED_NEW",
     };
 
-    this.ddbClient.send(new UpdateItemCommand(params));
+    return this.ddbClient.send(new UpdateItemCommand(params));
   }
 }
 

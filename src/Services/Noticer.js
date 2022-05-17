@@ -3,48 +3,57 @@ import {KUBO} from '../config/players.js';
 import LineAPI from '../APIClient/LineAPI.js';
 import DynamoDBAPI from '../APIClient/DynamoDBAPI.js';
 import dayjs from 'dayjs';
+import 'dayjs/locale/ja.js';
 
-const MATCH_IS_NOT = '0';      // その日は試合なし
-const MATCH_NOT_STARTED = '1'; // まだ通知していない
-const MATCH_BENCH = '2';       // substsを使う
-const MATCH_NOTICED = '3';     // 通知済
+const MATCH_IS_NOT = 0;      // その日は試合なし
+const MATCH_NOT_STARTED = 1; // まだ通知していない
+const MATCH_BENCH = 2;       // substsを使う
+const MATCH_NOTICED = 3;     // 通知済
 
 class Noticer {
   constructor() {
     this.FootballAPI = FootballAPI;
     this.LineAPI = LineAPI;
     this.DynamoDB = DynamoDBAPI;
+    dayjs.locale('ja');
   }
 
   async run () {
-    const response = await this.DynamoDB.find(KUBO.dynamo_id);
-    const fixture = response.Item;
-    const status = fixture.status.N;
-    // const fixture_date = dayjs(fixture.date.S);
-    const fixture_date = dayjs('2022-05-16T02:30:00+09:00');
-    const player_id = fixture.player_id.N;
-    const fixture_id = fixture.fixture_id.N;
+    const player = await this.DynamoDB.find(KUBO.dynamo_id);
+    console.log(player);
+
+    // 試合が終わった場合（fixture_date+120分くらいの場合はstatusを変更）
+    // if (dayjs().isAfter(player.fixture_date.add(2, 'h'))) {
+    //   player.status = MATCH_IS_NOT;
+    //   this.DynamoDB.update(player);
+    //   return;
+    // }
 
     // 試合なし、通知ずみの場合はreturn
-    if (status === MATCH_IS_NOT || status === MATCH_NOTICED) {
+    if (player.status === MATCH_IS_NOT || player.status === MATCH_NOTICED) {
       return;
     }
 
     // 試合開始済みの場合はスタメンかどうか確認
-    if (status === MATCH_NOT_STARTED && dayjs().isAfter(fixture_date)) {
-      if (await this.isStart(parseInt(fixture_id))) {
+    if (player.status === MATCH_NOT_STARTED && dayjs().isAfter(player.fixture_date)) {
+      if (await this.isStart(player.fixture_id)) {
         const text = "Hola!\n久保建英が先発だよ、見てね！";
         await this.LineAPI.postMessage(text);
-        this.DynamoDB.update(player_id, MATCH_NOTICED, fixture_date.format(), fixture_id);
+        player.status = MATCH_NOTICED;
+
+      } else {
+        // スタメンにいない場合はstatusをベンチに変更
+        player.status = MATCH_BENCH;
       }
-      // スタメンにいない場合はstatusをベンチに変更
-      this.DynamoDB.update(player_id, MATCH_BENCH, fixture_date.format(), fixture_id);
+      this.DynamoDB.update(player);
+      return;
     }
 
-    if (await this.isSubst(parseInt(fixture_id))) {
+    if (await this.isSubst(player.fixture_id)) {
       const text = "Hola!\n久保建英が途中出場だよ、応援よろしく！";
       await this.LineAPI.postMessage(text);
-      this.DynamoDB.update(player_id, MATCH_NOTICED, fixture_date.format(), fixture_id);
+      player.status = MATCH_NOTICED;
+      this.DynamoDB.update(player);
     }
   }
 
@@ -54,7 +63,8 @@ class Noticer {
       team: KUBO.team_id,
       player: KUBO.player_id
     });
-    if (!lineup) {
+
+    if (!lineup || !lineup[0].startXI) {
       return false;
     }
 
