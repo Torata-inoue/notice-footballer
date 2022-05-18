@@ -20,14 +20,13 @@ class Noticer {
 
   async run () {
     const player = await this.DynamoDB.find(KUBO.dynamo_id);
-    console.log(player);
 
     // 試合が終わった場合（fixture_date+120分くらいの場合はstatusを変更）
-    // if (dayjs().isAfter(player.fixture_date.add(2, 'h'))) {
-    //   player.status = MATCH_IS_NOT;
-    //   this.DynamoDB.update(player);
-    //   return;
-    // }
+    if (dayjs().isAfter(player.fixture_date.add(2, 'h'))) {
+      player.status = MATCH_IS_NOT;
+      this.DynamoDB.update(player);
+      return;
+    }
 
     // 試合なし、通知ずみの場合はreturn
     if (player.status === MATCH_IS_NOT || player.status === MATCH_NOTICED) {
