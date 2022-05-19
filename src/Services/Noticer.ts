@@ -11,6 +11,10 @@ const MATCH_BENCH = 2;       // substsを使う
 const MATCH_NOTICED = 3;     // 通知済
 
 class Noticer {
+  private FootballAPI;
+  private LineAPI;
+  private DynamoDB;
+
   constructor() {
     this.FootballAPI = FootballAPI;
     this.LineAPI = LineAPI;
@@ -56,12 +60,8 @@ class Noticer {
     }
   }
 
-  async isStart (fixture_id) {
-    const lineup = await this.FootballAPI.getLineUp({
-      fixture: fixture_id,
-      team: KUBO.team_id,
-      player: KUBO.player_id
-    });
+  async isStart (fixture_id: number) {
+    const lineup = await this.FootballAPI.getLineUp(fixture_id, KUBO.team_id, KUBO.player_id);
 
     if (!lineup || !lineup[0].startXI) {
       return false;
@@ -70,13 +70,10 @@ class Noticer {
     return lineup[0].startXI[0].player.id === KUBO.player_id;
   }
 
-  async isSubst (fixture_id) {
-    const substs = await this.FootballAPI.getSubstEvents({
-      fixture: fixture_id,
-      team: KUBO.team_id
-    });
+  async isSubst (fixture_id: number) {
+    const substs = await this.FootballAPI.getSubstEvents(fixture_id, KUBO.team_id);
 
-    return substs.some(val => val.assist.id === KUBO.player_id);
+    return substs.some((val: any) => val.assist.id === KUBO.player_id);
   }
 }
 

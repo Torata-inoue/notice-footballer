@@ -4,24 +4,28 @@ import {
   PutItemCommand,
   UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb';
-import Player from '../Model/Player.js';
+import Player, {playerRecordType} from '../Model/Player.js';
 
 class DynamoDBAPI {
+  private ddbClient;
+  private readonly table_name: string;
+
   constructor() {
     const region = 'ap-northeast-1';
     this.ddbClient = new DynamoDBClient({region});
     this.table_name = "player";
   }
 
-  async create (player_id, date, status, fixture_id) {
+  async create (player_id: number, date: string, status: number, fixture_id: number) {
+    const Item: playerRecordType = {
+      player_id: { N: String(player_id) },
+      status: { N: String(status) },
+      date: { S: date },
+      fixture_id: { N: String(fixture_id) }
+    };
     const params = {
       TableName: this.table_name,
-      Item: {
-        player_id: { N: player_id },
-        status: { N: status },
-        date: { S: date },
-        fixture_id: { N: fixture_id }
-      },
+      Item,
     };
 
     try {
@@ -31,7 +35,7 @@ class DynamoDBAPI {
     }
   }
 
-  async find (player_id) {
+  async find (player_id: string) {
     const params = {
       TableName: this.table_name,
       Key: {
@@ -39,11 +43,11 @@ class DynamoDBAPI {
       },
     };
 
-    const data = await this.ddbClient.send(new GetItemCommand(params));
+    const data: any = await this.ddbClient.send(new GetItemCommand(params));
     return new Player(data.Item);
   }
 
-  update (player) {
+  update (player: Player) {
     const params = {
       TableName: this.table_name,
       Key: {
